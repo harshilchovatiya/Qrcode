@@ -26,8 +26,10 @@
                 lastResult = decodedText;
                 // Handle on success condition with the decoded message.
                 if (isURL(decodedText)) {
-                        window.open(decodedText, '_blank');
-                    }
+                    window.open(decodedText, '_blank');
+                }
+                window.location.reload();
+
                 console.log(`Scan result ${decodedText}`, decodedResult);
             }
         }
