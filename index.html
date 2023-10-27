@@ -20,21 +20,6 @@
         var resultContainer = document.getElementById('qr-reader-results');
         var lastResult, countResults = 0;
 
-        // Function to request camera permission
-        function requestCameraPermission() {
-            navigator.mediaDevices.getUserMedia({ video: true })
-                .then(function (stream) {
-                    // You can handle the success here or reload the page
-                    console.log('Camera permission granted');
-                })
-                .catch(function (error) {
-                    console.error('Camera permission denied', error);
-                });
-        }
-
-        // Automatically request camera permission when the page reloads
-        requestCameraPermission();
-
         function onScanSuccess(decodedText, decodedResult) {
             if (decodedText !== lastResult) {
                 ++countResults;
@@ -48,7 +33,6 @@
                 console.log(`Scan result ${decodedText}`, decodedResult);
             }
         }
-
         function isURL(str) {
             const pattern = new RegExp('^(https?:\\/\\/)?' +
                 '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
