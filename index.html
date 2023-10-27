@@ -1,86 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-    <title>QR Code Scanner</title>
-    <meta name="author" content="Harshil Chovatiya">
-    <meta name="description" content="QR Code Scanner Web App">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Code Scanner by Harshil Chovatiya</title>
+    <!-- Add any necessary meta tags here -->
+    <script src="https://unpkg.com/html5-qrcode"></script>
 </head>
+
 <body>
-    <h1>QR Code Scanner</h1>
-    <select id="camera-select"></select>
-    <button id="start-scan-button">Start Scan</button>
-    <button id="stop-scan-button" style="display: none;">Stop Scan</button>
-    <video id="video" width="300" height="200" autoplay></video>
+    <h1>QR Code Scanner by Harshil Chovatiya</h1>
+
+    <!-- Create a container for the video stream and QR code scanner -->
+    <div id="qr-reader" style="width:500px"></div>
+    <div id="qr-reader-results"></div>
 
     <script>
-        const video = document.getElementById('video');
-        const startScanButton = document.getElementById('start-scan-button');
-        const stopScanButton = document.getElementById('stop-scan-button');
-        const cameraSelect = document.getElementById('camera-select');
-        let scanner = null;
+        var resultContainer = document.getElementById('qr-reader-results');
+        var lastResult, countResults = 0;
 
-        // Function to handle the scanning process
-        async function startScan() {
-            try {
-                const selectedCamera = cameraSelect.value;
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: selectedCamera } } });
-                video.srcObject = stream;
-
-                scanner = new Instascan.Scanner({ video });
-
-                scanner.addListener('scan', function (content) {
-                    if (isURL(content)) {
-                        window.open(content, '_blank');
+        function onScanSuccess(decodedText, decodedResult) {
+            if (decodedText !== lastResult) {
+                ++countResults;
+                lastResult = decodedText;
+                // Handle on success condition with the decoded message.
+                if (isURL(decodedText)) {
+                        window.open(decodedText, '_blank');
                     }
-                });
-
-                scanner.start();
-
-                // Show the "Stop Scan" button and hide the "Start Scan" button
-                startScanButton.style.display = 'none';
-                stopScanButton.style.display = 'block';
-            } catch (error) {
-                console.error('Error accessing the camera: ' + error);
+                console.log(`Scan result ${decodedText}`, decodedResult);
             }
         }
-
-        // Function to stop the scanning process
-        function stopScan() {
-            if (scanner) {
-                scanner.stop();
-                scanner = null;
-
-                // Stop the video stream
-                const stream = video.srcObject;
-                const tracks = stream.getTracks();
-                tracks.forEach(track => track.stop());
-
-                // Show the "Start Scan" button and hide the "Stop Scan" button
-                startScanButton.style.display = 'block';
-                stopScanButton.style.display = 'none';
-            }
-        }
-
-        // Event listeners
-        startScanButton.addEventListener('click', startScan);
-        stopScanButton.addEventListener('click', stopScan);
-
-        // Populate the camera selection dropdown
-        Instascan.Camera.getCameras().then(function (cameras) {
-            if (cameras.length > 0) {
-                cameras.forEach(function (camera) {
-                    const option = document.createElement('option');
-                    option.value = camera.id;
-                    option.text = camera.name || `Camera ${camera.id}`;
-                    cameraSelect.appendChild(option);
-                });
-            } else {
-                console.error('No cameras found.');
-                startScanButton.disabled = true;
-            }
-        });
-
-        // Function to check if a given string is a URL
         function isURL(str) {
             const pattern = new RegExp('^(https?:\\/\\/)?' +
                 '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' +
@@ -90,9 +40,11 @@
                 '(\\#[-a-z\\d_]*)?$', 'i');
             return !!pattern.test(str);
         }
-    </script>
 
-    <!-- Include the Instascan library for QR code scanning -->
-    <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+        var html5QrcodeScanner = new Html5QrcodeScanner(
+            "qr-reader", { fps: 10, qrbox: 250 });
+        html5QrcodeScanner.render(onScanSuccess);
+    </script>
 </body>
+
 </html>
