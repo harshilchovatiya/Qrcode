@@ -7,44 +7,78 @@
 </head>
 <body>
     <h1>QR Code Scanner</h1>
+    <select id="camera-select"></select>
+    <button id="start-scan-button">Start Scan</button>
+    <button id="stop-scan-button" style="display: none;">Stop Scan</button>
     <video id="video" width="300" height="200" autoplay></video>
-    <button id="scan-button">Scan QR Code</button>
 
     <script>
-        // Get the video element and button
         const video = document.getElementById('video');
-        const scanButton = document.getElementById('scan-button');
+        const startScanButton = document.getElementById('start-scan-button');
+        const stopScanButton = document.getElementById('stop-scan-button');
+        const cameraSelect = document.getElementById('camera-select');
+        let scanner = null;
 
         // Function to handle the scanning process
-        async function scanQRCode() {
+        async function startScan() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                const selectedCamera = cameraSelect.value;
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: selectedCamera } } });
                 video.srcObject = stream;
 
-                const qrCodeScanner = new Instascan.Scanner({ video });
+                scanner = new Instascan.Scanner({ video });
 
-                qrCodeScanner.addListener('scan', function (content) {
-                    // Check if the scanned content is a valid URL
+                scanner.addListener('scan', function (content) {
                     if (isURL(content)) {
-                        // Open the link in a new page
                         window.open(content, '_blank');
                     }
                 });
 
-                Instascan.Camera.getCameras().then(function (cameras) {
-                    if (cameras.length > 0) {
-                        qrCodeScanner.start(cameras[0]);
-                    } else {
-                        console.error('No cameras found.');
-                    }
-                });
+                scanner.start();
+
+                // Show the "Stop Scan" button and hide the "Start Scan" button
+                startScanButton.style.display = 'none';
+                stopScanButton.style.display = 'block';
             } catch (error) {
                 console.error('Error accessing the camera: ' + error);
             }
         }
 
-        // Event listener for the scan button
-        scanButton.addEventListener('click', scanQRCode);
+        // Function to stop the scanning process
+        function stopScan() {
+            if (scanner) {
+                scanner.stop();
+                scanner = null;
+
+                // Stop the video stream
+                const stream = video.srcObject;
+                const tracks = stream.getTracks();
+                tracks.forEach(track => track.stop());
+
+                // Show the "Start Scan" button and hide the "Stop Scan" button
+                startScanButton.style.display = 'block';
+                stopScanButton.style.display = 'none';
+            }
+        }
+
+        // Event listeners
+        startScanButton.addEventListener('click', startScan);
+        stopScanButton.addEventListener('click', stopScan);
+
+        // Populate the camera selection dropdown
+        Instascan.Camera.getCameras().then(function (cameras) {
+            if (cameras.length > 0) {
+                cameras.forEach(function (camera) {
+                    const option = document.createElement('option');
+                    option.value = camera.id;
+                    option.text = camera.name || `Camera ${camera.id}`;
+                    cameraSelect.appendChild(option);
+                });
+            } else {
+                console.error('No cameras found.');
+                startScanButton.disabled = true;
+            }
+        });
 
         // Function to check if a given string is a URL
         function isURL(str) {
